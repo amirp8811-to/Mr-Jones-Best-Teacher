@@ -1,0 +1,462 @@
+
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>WJEC Comp Sci Units 1.1 · 1.2 · 1.3 · 1.6 — Interactive Quiz</title>
+<style>
+  :root{
+    --bg:#0b0f12;
+    --card:#0f1720;
+    --muted:#9aa6b2;
+    --accent:#6ee7b7;
+    --danger:#ff6b6b;
+    --glass: rgba(255,255,255,0.03);
+  }
+  html,body{height:100%;margin:0;font-family:Inter,ui-sans-serif,system-ui,Segoe UI,Roboto,"Helvetica Neue",Arial;}
+  body{background:linear-gradient(180deg,#071018 0%, #08121a 100%);color:#e6eef3;display:flex;flex-direction:column;gap:18px;padding:18px;}
+  /* Big top bar (user prefers larger navbar) */
+  header{display:flex;align-items:center;justify-content:space-between;padding:18px;border-radius:12px;background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));backdrop-filter:blur(6px);box-shadow:0 6px 18px rgba(0,0,0,0.6);}
+  header h1{font-size:1.35rem;margin:0}
+  header .meta{color:var(--muted);font-size:0.9rem}
+  main{display:grid;grid-template-columns: 1fr 360px; gap:18px;align-items:start;}
+  .card{background:var(--card);padding:18px;border-radius:12px;box-shadow:0 6px 18px rgba(0,0,0,0.6)}
+  .question-count{color:var(--muted);font-size:0.9rem;margin-bottom:8px}
+  .question{text-wrap:balance;margin-bottom:12px}
+  .answers{display:flex;flex-direction:column;gap:10px}
+  button.choice{background:var(--glass);border:1px solid rgba(255,255,255,0.03);padding:12px;border-radius:10px;color:inherit;text-align:left;cursor:pointer;outline:none}
+  button.choice:hover{transform:translateY(-2px)}
+  button.choice.correct{border-color:rgba(110,231,183,0.5);box-shadow:0 6px 18px rgba(110,231,183,0.04)}
+  button.choice.incorrect{border-color:rgba(255,107,107,0.5)}
+  .controls{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+  .btn{background:transparent;border:1px solid rgba(255,255,255,0.06);padding:8px 12px;border-radius:10px;cursor:pointer}
+  .btn.primary{background:linear-gradient(90deg,var(--accent),#4dd6b0);color:#07221a;border:none}
+  .btn.warn{background:transparent;color:var(--danger);border-color:rgba(255,107,107,0.18)}
+  .progress-wrap{height:12px;background:rgba(255,255,255,0.03);border-radius:999px;overflow:hidden;margin-top:8px}
+  .progress{height:100%;width:0%;background:linear-gradient(90deg,var(--accent),#2bd1a2)}
+  aside .summary{display:flex;flex-direction:column;gap:12px}
+  .score{font-size:1.25rem}
+  .explanation{margin-top:10px;color:var(--muted);font-size:0.92rem}
+  footer{color:var(--muted);font-size:0.85rem;text-align:center;margin-top:8px}
+  /* responsive */
+  @media (max-width:980px){
+    main{grid-template-columns:1fr; padding-bottom:40px}
+    aside{order:2}
+  }
+  /* small accessibility focus */
+  button:focus{outline:3px solid rgba(110,231,183,0.12);outline-offset:2px}
+  input[type="text"].short{width:100%;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:inherit}
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>WJEC Comp Sci — Units 1.1 · 1.2 · 1.3 · 1.6 (Interactive Quiz)</h1>
+    <div class="meta">20 questions · instant feedback · review answers</div>
+  </div>
+  <div class="meta">Dark theme • keyboard accessible</div>
+</header>
+
+<main>
+  <section class="card" id="quizCard" role="region" aria-labelledby="qtitle">
+    <div class="question-count" id="qcount">Question 1 of 20</div>
+    <h2 id="qtitle" class="question"></h2>
+
+    <div class="answers" id="answers"></div>
+
+    <div class="controls" aria-hidden="false">
+      <button class="btn primary" id="nextBtn">Next ▶</button>
+      <button class="btn" id="prevBtn">◀ Prev</button>
+      <button class="btn" id="submitShort" style="display:none">Submit</button>
+      <button class="btn" id="showReview">Show review</button>
+      <button class="btn" id="shuffleBtn">Shuffle</button>
+      <div style="flex:1"></div>
+      <div style="text-align:right">
+        <div id="feedback" class="meta"></div>
+        <div class="progress-wrap" aria-hidden="true">
+          <div class="progress" id="progress"></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="explain" class="explanation" hidden></div>
+  </section>
+
+  <aside class="card" aria-label="Quiz summary">
+    <div class="summary">
+      <div>
+        <strong>Score</strong>
+        <div class="score" id="score">0 / 20</div>
+      </div>
+
+      <div>
+        <strong>Quick stats</strong>
+        <div class="meta" id="stats">Correct: 0 · Incorrect: 0 · Unanswered: 20</div>
+      </div>
+
+      <div>
+        <strong>Filter</strong>
+        <div style="display:flex;gap:8px;margin-top:8px">
+          <button class="btn" data-filter="all">All</button>
+          <button class="btn" data-filter="1.1">1.1</button>
+          <button class="btn" data-filter="1.2">1.2</button>
+          <button class="btn" data-filter="1.3">1.3</button>
+          <button class="btn" data-filter="1.6">1.6</button>
+        </div>
+      </div>
+
+      <div>
+        <strong>Controls</strong>
+        <div style="display:flex;gap:8px;margin-top:8px">
+          <button class="btn" id="resetBtn">Reset</button>
+          <button class="btn warn" id="revealBtn">Reveal all answers</button>
+        </div>
+      </div>
+
+      <div>
+        <strong>Review list</strong>
+        <div id="qList" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px"></div>
+      </div>
+    </div>
+  </aside>
+</main>
+
+<footer>
+  Tip: use Tab + Enter to navigate and answer. Questions are sample questions covering common WJEC topics (CPU, memory, data representation, logic & networks). Edit the `questions` array in the HTML to change or add Qs.
+</footer>
+
+<script>
+const questions = [
+/* =======================
+   UNIT 1.1 — SYSTEMS / CPU
+   ======================= */
+{id:1,unit:'1.1',type:'mcq',question:'What does the PC (Program Counter) store?',choices:['Address of next instruction','Current data','ALU result','Cache line address'],answer:0,explanation:'PC stores the address of the next instruction to fetch.'},
+{id:2,unit:'1.1',type:'mcq',question:'Which step decodes instructions?',choices:['Fetch','Decode','Execute','Store'],answer:1,explanation:'Decode interprets the instruction.'},
+{id:3,unit:'1.1',type:'tf',question:'The clock speed is measured in Hz.',choices:['True','False'],answer:0,explanation:'Clock speed = cycles per second.'},
+{id:4,unit:'1.1',type:'mcq',question:'Which CPU component manages control signals?',choices:['ALU','CU','Register','Accumulator'],answer:1,explanation:'The Control Unit generates control signals.'},
+{id:5,unit:'1.1',type:'mcq',question:'What does the MAR store?',choices:['Data to be written','Address of data/instruction','Opcode only','Binary ASCII values'],answer:1,explanation:'MAR stores memory addresses.'},
+{id:6,unit:'1.1',type:'mcq',question:'Pipeline processing improves…',choices:['Latency','Clock speed','Throughput','Cache size'],answer:2,explanation:'Pipelining increases throughput.'},
+{id:7,unit:'1.1',type:'mcq',question:'Which register holds the currently executed instruction?',choices:['MDR','CIR','PC','ACC'],answer:1,explanation:'CIR = Current Instruction Register.'},
+{id:8,unit:'1.1',type:'mcq',question:'Which type of CPU has multiple processing cores?',choices:['RISC','CISC','Multicore','Single-cycle'],answer:2,explanation:'Multicore CPUs have multiple cores.'},
+{id:9,unit:'1.1',type:'tf',question:'A higher clock speed always guarantees better performance.',choices:['True','False'],answer:1,explanation:'Performance depends on many factors, not just clock speed.'},
+{id:10,unit:'1.1',type:'mcq',question:'What is the ALU responsible for?',choices:['Control signals','Address decoding','Arithmetic and logic','Instruction fetching'],answer:2,explanation:'Arithmetic Logic Unit = maths + logic.'},
+
+/* =======================
+   UNIT 1.2 — MEMORY & STORAGE
+   ======================= */
+{id:11,unit:'1.2',type:'mcq',question:'Which is volatile?',choices:['RAM','ROM','SSD','Blu-Ray'],answer:0,explanation:'RAM loses data when powered off.'},
+{id:12,unit:'1.2',type:'mcq',question:'Which is secondary storage?',choices:['Register','L1 cache','HDD','MAR'],answer:2,explanation:'HDD = secondary storage.'},
+{id:13,unit:'1.2',type:'short',question:'One advantage of cloud storage?',answer:/backup|remote|anywhere|scalable|sharing|redundancy/i,explanation:'Cloud storage allows access anywhere, backups, scalability, etc.'},
+{id:14,unit:'1.2',type:'mcq',question:'Which has the fastest access speed?',choices:['SSD','HDD','Magnetic tape','DVD'],answer:0,explanation:'SSD is fastest.'},
+{id:15,unit:'1.2',type:'mcq',question:'What type of memory is BIOS stored in?',choices:['RAM','ROM','Cache','GPU memory'],answer:1,explanation:'BIOS is stored in ROM.'},
+{id:16,unit:'1.2',type:'mcq',question:'Optical media stores data using…',choices:['Magnetic fields','Electric charge','Light (lasers)','Radio waves'],answer:2,explanation:'Optical discs use laser etching.'},
+{id:17,unit:'1.2',type:'tf',question:'Virtual memory uses secondary storage as extra RAM.',choices:['True','False'],answer:0,explanation:'Virtual memory uses disk to extend RAM.'},
+{id:18,unit:'1.2',type:'mcq',question:'Which is write-once?',choices:['CD-R','DVD-RW','SSD','HDD'],answer:0,explanation:'CD-R can be written once.'},
+{id:19,unit:'1.2',type:'mcq',question:'Cache memory is located…',choices:['On the CPU','On motherboard','In RAM','In ROM'],answer:0,explanation:'Cache is built into CPU die.'},
+{id:20,unit:'1.2',type:'mcq',question:'Which storage has the highest capacity typically?',choices:['HDD','SSD','RAM','ROM'],answer:0,explanation:'HDDs usually offer the highest capacity.'},
+
+/* =======================
+   UNIT 1.3 — DATA REPRESENTATION
+   ======================= */
+{id:21,unit:'1.3',type:'mcq',question:'Binary for 13?',choices:['1101','1011','1110','1001'],answer:0,explanation:'13 = 1101.'},
+{id:22,unit:'1.3',type:'mcq',question:'How many bits in a nibble?',choices:['2','4','8','16'],answer:1,explanation:'Nibble = 4 bits.'},
+{id:23,unit:'1.3',type:'mcq',question:'ASCII stands for…',choices:['Advanced Standard Code for International Input','American Standard Code for Information Interchange','Automatic Script Conversion for Internet Interactions'],answer:1,explanation:'ASCII.'},
+{id:24,unit:'1.3',type:'mcq',question:'Hex value A represents decimal…',choices:['8','9','10','11'],answer:2,explanation:'A₁₆ = 10.'},
+{id:25,unit:'1.3',type:'short',question:'Binary 10110 → decimal?',answer:/^22$/,explanation:'10110₂ = 22.'},
+{id:26,unit:'1.3',type:'mcq',question:'Which is lossless compression?',choices:['JPEG','MP3','PNG','MPEG'],answer:2,explanation:'PNG is lossless.'},
+{id:27,unit:'1.3',type:'tf',question:'Unicode supports more characters than ASCII.',choices:['True','False'],answer:0,explanation:'Unicode is larger.'},
+{id:28,unit:'1.3',type:'mcq',question:'How many values can 6 bits represent?',choices:['16','32','64','128'],answer:2,explanation:'2⁶ = 64.'},
+{id:29,unit:'1.3',type:'mcq',question:'Two’s complement is used for…',choices:['Unsigned integers','Negative integers','Floating point','Binary strings'],answer:1,explanation:'Represents signed integers.'},
+{id:30,unit:'1.3',type:'mcq',question:'What is colour depth measured in?',choices:['Bytes','Hz','Pixels','Bits'],answer:3,explanation:'Bits per pixel.'},
+
+/* =======================
+   UNIT 1.6 — NETWORKS / LOGIC
+   ======================= */
+{id:31,unit:'1.6',type:'mcq',question:'Which gate outputs 1 only when both inputs are 1?',choices:['OR','XOR','AND','NOR'],answer:2,explanation:'AND gate.'},
+{id:32,unit:'1.6',type:'mcq',question:'IP stands for…',choices:['Internal Packet','Internet Protocol','Internet Path','Intranet Protocol'],answer:1,explanation:'Internet Protocol.'},
+{id:33,unit:'1.6',type:'mcq',question:'Star topology uses a…',choices:['Ring cable','Central switch/hub','Wireless bus','Mesh grid'],answer:1,explanation:'Star = central device.'},
+{id:34,unit:'1.6',type:'tf',question:'Routers work at OSI Layer 3.',choices:['True','False'],answer:0,explanation:'Router = network layer.'},
+{id:35,unit:'1.6',type:'mcq',question:'Which protocol loads web pages?',choices:['SMTP','HTTP','DNS','FTP'],answer:1,explanation:'HTTP/HTTPS.'},
+{id:36,unit:'1.6',type:'mcq',question:'Which device forwards frames based on MAC?',choices:['Switch','Router','Hub','Bridge'],answer:0,explanation:'Switch uses MAC table.'},
+{id:37,unit:'1.6',type:'mcq',question:'Which wireless encryption is strongest?',choices:['WEP','WPA','WPA2','No password'],answer:2,explanation:'WPA2 is strongest (WPA3 even stronger).'},
+{id:38,unit:'1.6',type:'mcq',question:'What does DNS do?',choices:['Encrypts data','Translates domain names to IPs','Blocks traffic','Checks firewall rules'],answer:1,explanation:'DNS resolves names.'},
+{id:39,unit:'1.6',type:'mcq',question:'Which gate outputs 0 only when both inputs are 1?',choices:['NOR','NAND','XOR','OR'],answer:1,explanation:'NAND = NOT AND.'},
+{id:40,unit:'1.6',type:'mcq',question:'Which cable type is most immune to interference?',choices:['Twisted pair','Coaxial','Fibre optic','Untwisted copper'],answer:2,explanation:'Fibre is immune to EMI.'},
+
+/* =======================
+   EXTRA NEW QUESTIONS
+   ======================= */
+
+{id:41,unit:'1.1',type:'mcq',question:'Hyperthreading allows…',choices:['Multiple CPUs','One core to act like two threads','Faster RAM','More cache'],answer:1,explanation:'Hyperthreading = parallel threads.'},
+{id:42,unit:'1.1',type:'mcq',question:'A GPU is mainly optimized for…',choices:['Serial processing','Parallel processing','Database queries','Web browsing'],answer:1,explanation:'GPUs excel at parallelism.'},
+{id:43,unit:'1.1',type:'tf',question:'The accumulator stores arithmetic results.',choices:['True','False'],answer:0,explanation:'ACC holds intermediate ALU results.'},
+{id:44,unit:'1.1',type:'mcq',question:'A CPU cache miss means…',choices:['Data is found in cache','Data must be fetched from main memory','CPU crashes','CPU resets'],answer:1,explanation:'Cache miss = fetch from RAM.'},
+{id:45,unit:'1.1',type:'mcq',question:'Which memory is fastest?',choices:['RAM','Cache','SSD','VRAM'],answer:1,explanation:'Cache > RAM.'},
+
+{id:46,unit:'1.2',type:'mcq',question:'SSD uses what technology?',choices:['Magnetic platters','Optical laser','NAND flash','Quantum bits'],answer:2,explanation:'SSDs use NAND flash.'},
+{id:47,unit:'1.2',type:'tf',question:'ROM keeps its contents when powered off.',choices:['True','False'],answer:0,explanation:'ROM is non-volatile.'},
+{id:48,unit:'1.2',type:'mcq',question:'Which is sequential access?',choices:['RAM','Tape drive','SSD','SD card'],answer:1,explanation:'Tape = sequential-only.'},
+{id:49,unit:'1.2',type:'mcq',question:'Which memory is cheapest per GB?',choices:['RAM','SSD','HDD','Cache'],answer:2,explanation:'HDDs are cheapest.'},
+{id:50,unit:'1.2',type:'mcq',question:'Virtual memory problems include…',choices:['Thrashing','Overheating','GPU overload','Clock drift'],answer:0,explanation:'Excessive swapping = thrashing.'},
+
+{id:51,unit:'1.3',type:'mcq',question:'What is the binary for hex 2F?',choices:['00111110','00101111','10101111','01001111'],answer:1,explanation:'2 = 0010, F = 1111 → 0010 1111.'},
+{id:52,unit:'1.3',type:'mcq',question:'How many bytes in 1 kilobyte (binary)?',choices:['1000','1024','500','256'],answer:1,explanation:'Binary KB = 1024 bytes.'},
+{id:53,unit:'1.3',type:'mcq',question:'Which compression reduces quality?',choices:['Lossless','Lossy','Checksum','Unicode'],answer:1,explanation:'Lossy reduces quality.'},
+{id:54,unit:'1.3',type:'tf',question:'Floating point numbers store both mantissa and exponent.',choices:['True','False'],answer:0,explanation:'Floating point = scientific notation.'},
+{id:55,unit:'1.3',type:'short',question:'Hex FF → decimal?',answer:/^255$/,explanation:'FF₁₆ = 255.'},
+
+{id:56,unit:'1.6',type:'mcq',question:'SMTP is for…',choices:['Sending email','Loading webpages','File transfer','Streaming'],answer:0,explanation:'SMTP = outgoing mail.'},
+{id:57,unit:'1.6',type:'mcq',question:'Which device splits a network into collision domains?',choices:['Hub','Switch','Repeater','Modem'],answer:1,explanation:'Switch = separate collision domains.'},
+{id:58,unit:'1.6',type:'tf',question:'LANs cover a small geographical area.',choices:['True','False'],answer:0,explanation:'LAN = Local Area Network.'},
+{id:59,unit:'1.6',type:'mcq',question:'Which logic gate outputs 1 for differing inputs?',choices:['AND','OR','NOR','XOR'],answer:3,explanation:'XOR = different inputs.'},
+{id:60,unit:'1.6',type:'mcq',question:'What does a firewall do?',choices:['Boost speed','Filter traffic','Convert optical signals','Check cabling'],answer:1,explanation:'Firewalls inspect + filter packets.'},
+];
+
+
+let state = {
+  pool: [...questions],
+  order: [],         // indices into pool
+  index: 0,          // position in order
+  answers: {},       // id -> { given, correct, score }
+  filter:'all',
+  showReview:false
+};
+
+function init(){
+  // default order
+  state.order = questions.map((q,i)=>i);
+  renderQuestion();
+  buildQList();
+  updateStats();
+  attachEvents();
+  updateProgress();
+}
+
+function attachEvents(){
+  document.getElementById('nextBtn').addEventListener('click', ()=>goto(state.index+1));
+  document.getElementById('prevBtn').addEventListener('click', ()=>goto(state.index-1));
+  document.getElementById('shuffleBtn').addEventListener('click', shuffleQuestions);
+  document.getElementById('resetBtn').addEventListener('click', resetAll);
+  document.getElementById('revealBtn').addEventListener('click', revealAll);
+  document.getElementById('showReview').addEventListener('click', ()=>{ state.showReview=!state.showReview; renderQuestion();});
+  document.querySelectorAll('aside .summary button[data-filter]').forEach(b=>{
+    b.addEventListener('click', ()=>setFilter(b.getAttribute('data-filter')));
+  });
+  // keyboard: Enter on focused choice triggers click via natural button focus
+}
+
+function setFilter(f){
+  state.filter = f;
+  // build new order of indices matching filter
+  const filteredIndices = questions.map((q,i)=>i).filter(i=>{
+    if(f==='all') return true;
+    return questions[i].unit === f;
+  });
+  state.order = filteredIndices;
+  state.index = 0;
+  buildQList();
+  renderQuestion();
+  updateProgress();
+}
+
+function buildQList(){
+  const box = document.getElementById('qList');
+  box.innerHTML='';
+  state.order.forEach((idx,pos)=>{
+    const q = questions[idx];
+    const btn = document.createElement('button');
+    btn.className='btn';
+    btn.textContent = `${q.unit} · Q${q.id}`;
+    btn.title = q.question.replace(/<[^>]*>/g,'');
+    btn.addEventListener('click', ()=>{ state.index = pos; renderQuestion(); });
+    box.appendChild(btn);
+  });
+}
+
+function renderQuestion(){
+  const qArea = document.getElementById('qtitle');
+  const ansArea = document.getElementById('answers');
+  const qcount = document.getElementById('qcount');
+  const explain = document.getElementById('explain');
+  ansArea.innerHTML = '';
+  explain.hidden = true;
+  document.getElementById('feedback').textContent = '';
+
+  if(state.order.length === 0){
+    qArea.textContent = 'No questions for that filter.';
+    qcount.textContent = '0 of 0';
+    return;
+  }
+
+  if(state.index < 0) state.index = 0;
+  if(state.index >= state.order.length) state.index = state.order.length - 1;
+
+  const qIdx = state.order[state.index];
+  const q = questions[qIdx];
+
+  qcount.textContent = `Question ${state.index + 1} of ${state.order.length} · (${q.unit})`;
+  qArea.innerHTML = `<span>${q.question}</span>`;
+
+  // render based on type
+  if(q.type === 'mcq' || q.type === 'tf'){
+    q.choices.forEach((choice, i)=>{
+      const btn = document.createElement('button');
+      btn.className = 'choice';
+      btn.innerHTML = choice;
+      btn.setAttribute('data-choice', i);
+      btn.addEventListener('click', ()=>selectChoice(q, i, btn));
+      ansArea.appendChild(btn);
+    });
+    document.getElementById('submitShort').style.display = 'none';
+  } else if(q.type === 'short'){
+    const input = document.createElement('input');
+    input.type='text';
+    input.className='short';
+    input.id='shortInput';
+    input.placeholder='Type your answer and press Submit';
+    ansArea.appendChild(input);
+    const submit = document.getElementById('submitShort');
+    submit.style.display='inline-block';
+    submit.onclick = ()=>submitShort(q, input.value);
+    input.addEventListener('keydown', (e)=>{ if(e.key === 'Enter') submitShort(q, input.value); });
+  }
+
+  // If already answered -> show selection + explanation
+  const prev = state.answers[q.id];
+  if(prev){
+    // highlight chosen and correct
+    if(q.type === 'short'){
+      document.getElementById('shortInput').value = prev.given;
+    } else {
+      const choices = ansArea.querySelectorAll('button.choice');
+      choices.forEach(b=>{
+        const i = Number(b.getAttribute('data-choice'));
+        if(i === q.answer) b.classList.add('correct');
+        if(i === prev.given && prev.given !== q.answer) b.classList.add('incorrect');
+        // disable
+        b.disabled = true;
+      });
+    }
+    explain.hidden = false;
+    explain.innerHTML = `<strong>Explanation:</strong> ${q.explanation}`;
+  } else {
+    // fresh: ensure choices enabled
+    const choices = ansArea.querySelectorAll('button.choice');
+    choices.forEach(b=>b.disabled=false);
+  }
+
+  // review mode shows correct answer & explanation even if unanswered
+  if(state.showReview){
+    explain.hidden = false;
+    explain.innerHTML = `<strong>Correct answer:</strong> ${
+      (q.type==='short')? 'See explanation' : (q.choices[q.answer])
+    }<br><strong>Explanation:</strong> ${q.explanation}`;
+  }
+
+  updateProgress();
+}
+
+function selectChoice(q, choiceIndex, btn){
+  // lock choices
+  const ansArea = document.getElementById('answers');
+  ansArea.querySelectorAll('button.choice').forEach(b=>b.disabled=true);
+
+  const isCorrect = choiceIndex === q.answer;
+  // mark them visually
+  const choices = ansArea.querySelectorAll('button.choice');
+  choices.forEach(b=>{
+    const i = Number(b.getAttribute('data-choice'));
+    if(i === q.answer) b.classList.add('correct');
+    if(i === choiceIndex && !isCorrect) b.classList.add('incorrect');
+  });
+
+  // store
+  state.answers[q.id] = {given: choiceIndex, correct: q.answer, score: isCorrect?1:0};
+  document.getElementById('feedback').textContent = isCorrect ? 'Correct ✔' : 'Incorrect ✖';
+  const explain = document.getElementById('explain');
+  explain.hidden = false;
+  explain.innerHTML = `<strong>Explanation:</strong> ${q.explanation}`;
+  updateStats();
+}
+
+function submitShort(q, text){
+  const answer = text.trim();
+  const passed = (typeof q.answer === 'string') ? (answer.toLowerCase() === q.answer.toLowerCase()) : (q.answer.test(answer));
+  // save (store given string; score 1 or 0)
+  state.answers[q.id] = {given: answer || '(blank)', correct: q.answer, score: passed?1:0};
+  document.getElementById('feedback').textContent = passed ? 'Correct ✔' : 'Recorded';
+  const explain = document.getElementById('explain');
+  explain.hidden = false;
+  explain.innerHTML = `<strong>Explanation:</strong> ${q.explanation}`;
+  updateStats();
+}
+
+function goto(pos){
+  if(pos < 0) pos = 0;
+  if(pos >= state.order.length) pos = state.order.length - 1;
+  state.index = pos;
+  renderQuestion();
+}
+
+function updateStats(){
+  const total = questions.length;
+  let correct = 0, incorrect = 0;
+  state.order.forEach(idx=>{
+    const q = questions[idx];
+    const a = state.answers[q.id];
+    if(!a) return;
+    if(a.score && a.score>0) correct++;
+    else incorrect++;
+  });
+  const answered = Object.keys(state.answers).length;
+  const unanswered = total - answered;
+  document.getElementById('score').textContent = `${correct} / ${total}`;
+  document.getElementById('stats').textContent = `Correct: ${correct} · Incorrect: ${incorrect} · Unanswered: ${unanswered}`;
+}
+
+function updateProgress(){
+  const p = Math.round(((state.index) / Math.max(1, state.order.length-1)) * 100);
+  document.getElementById('progress').style.width = `${p}%`;
+}
+
+function shuffleQuestions(){
+  // Fisher-Yates on state.order
+  for(let i = state.order.length - 1; i>0; i--){
+    const j = Math.floor(Math.random()*(i+1));
+    [state.order[i], state.order[j]] = [state.order[j], state.order[i]];
+  }
+  state.index = 0;
+  buildQList();
+  renderQuestion();
+}
+
+function resetAll(){
+  if(!confirm('Reset all answers and start again?')) return;
+  state.answers = {};
+  state.order = questions.map((q,i)=>i);
+  state.index = 0;
+  state.filter = 'all';
+  buildQList();
+  renderQuestion();
+  updateStats();
+}
+
+function revealAll(){
+  // mark all as answered with correct values
+  if(!confirm('Reveal and mark all answers as correct? This will fill the review.')) return;
+  questions.forEach(q=>{
+    if(q.type==='short'){
+      state.answers[q.id] = {given:'(revealed)', correct:q.answer, score:1};
+    } else {
+      state.answers[q.id] = {given:q.answer, correct:q.answer, score:1};
+    }
+  });
+  updateStats();
+  renderQuestion();
+}
+
+// initialize
+init();
+</script>
+</body>
+</html>
